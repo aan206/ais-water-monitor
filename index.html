@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AIS Water Monitor</title>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -13,106 +15,207 @@
 
     body {
       margin: 0;
-      background: #07111f;
-      color: white;
+      background: #eef5fb;
+      color: #0f172a;
       padding: 16px;
     }
 
     .container {
-      max-width: 1000px;
+      max-width: 1200px;
       margin: auto;
     }
 
     .header {
+      background: linear-gradient(135deg, #0f5ea8, #1d9bd7);
+      color: white;
+      border-radius: 18px;
+      padding: 24px 16px;
       text-align: center;
-      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(15, 94, 168, 0.25);
+      margin-bottom: 16px;
     }
 
     .header h1 {
       margin: 0;
-      color: #38bdf8;
+      font-size: 36px;
+      letter-spacing: 1px;
     }
 
     .header p {
-      margin: 6px 0 0;
-      color: #94a3b8;
+      margin: 8px 0 0;
+      color: #e0f2fe;
+      font-size: 16px;
     }
 
-    .status {
-      text-align: center;
+    .status-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
       margin-bottom: 16px;
-      color: #22c55e;
+    }
+
+    .status-box {
+      flex: 1;
+      min-width: 220px;
+      background: white;
+      border-radius: 14px;
+      padding: 14px 16px;
+      border: 1px solid #dbeafe;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    }
+
+    .status-label {
+      color: #64748b;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .status-value {
+      font-size: 18px;
       font-weight: bold;
+    }
+
+    .online {
+      color: #16a34a;
+    }
+
+    .stale {
+      color: #ca8a04;
+    }
+
+    .offline {
+      color: #dc2626;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
       gap: 16px;
+      margin-bottom: 16px;
     }
 
     .card {
-      background: #111827;
-      border: 1px solid #1e293b;
-      border-radius: 16px;
-      padding: 18px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      background: white;
+      border-radius: 18px;
+      padding: 20px;
+      border: 1px solid #dbeafe;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
     }
 
     .label {
-      font-size: 14px;
-      color: #94a3b8;
-      margin-bottom: 8px;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 10px;
     }
 
     .value {
       font-size: 34px;
       font-weight: bold;
+      color: #0f172a;
     }
 
     .unit {
       font-size: 16px;
-      color: #cbd5e1;
+      color: #64748b;
+      margin-left: 3px;
     }
 
     .level {
-      color: #38bdf8;
+      color: #0ea5e9;
     }
 
     .tds {
-      color: #facc15;
+      color: #ca8a04;
     }
 
     .temp {
-      color: #fb7185;
+      color: #e11d48;
     }
 
     .ec {
-      color: #4ade80;
+      color: #16a34a;
     }
 
-    .footer {
-      margin-top: 20px;
-      text-align: center;
-      font-size: 13px;
-      color: #94a3b8;
+    .device {
+      font-size: 22px;
+      line-height: 1.3;
     }
 
     .bar {
       width: 100%;
-      height: 14px;
-      background: #1e293b;
+      height: 18px;
+      background: #e2e8f0;
       border-radius: 99px;
       overflow: hidden;
-      margin-top: 12px;
+      margin-top: 14px;
     }
 
     .bar-fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, #22d3ee, #38bdf8);
       border-radius: 99px;
-      transition: width 0.5s ease;
+      transition: width 0.5s ease, background 0.5s ease;
+    }
+
+    .charts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 16px;
+    }
+
+    .chart-card {
+      background: white;
+      border-radius: 18px;
+      padding: 18px;
+      border: 1px solid #dbeafe;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+      height: 330px;
+    }
+
+    .chart-title {
+      font-weight: bold;
+      color: #0f172a;
+      margin-bottom: 10px;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 260px !important;
+    }
+
+    .footer {
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+      margin-top: 18px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+
+      .header h1 {
+        font-size: 27px;
+      }
+
+      .value {
+        font-size: 30px;
+      }
+
+      .charts {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-card {
+        height: 300px;
+      }
+
+      canvas {
+        height: 230px !important;
+      }
     }
   </style>
 </head>
@@ -122,17 +225,31 @@
 
     <div class="header">
       <h1>AIS WATER MONITOR</h1>
-      <p>ESP32 Tandon Monitoring Dashboard</p>
+      <p>Industrial Water Tank Monitoring Dashboard</p>
     </div>
 
-    <div class="status" id="status">Connecting to Supabase...</div>
+    <div class="status-row">
+      <div class="status-box">
+        <div class="status-label">SYSTEM STATUS</div>
+        <div class="status-value" id="status">Connecting...</div>
+      </div>
+
+      <div class="status-box">
+        <div class="status-label">LAST UPDATE</div>
+        <div class="status-value" id="lastUpdate">--</div>
+      </div>
+
+      <div class="status-box">
+        <div class="status-label">DATA AGE</div>
+        <div class="status-value" id="dataAge">--</div>
+      </div>
+    </div>
 
     <div class="grid">
-
       <div class="card">
         <div class="label">WATER LEVEL</div>
         <div class="value level">
-          <span id="waterLevel">--</span><span class="unit"> %</span>
+          <span id="waterLevel">--</span><span class="unit">%</span>
         </div>
         <div class="bar">
           <div class="bar-fill" id="levelBar"></div>
@@ -142,43 +259,64 @@
       <div class="card">
         <div class="label">VOLUME</div>
         <div class="value">
-          <span id="volumeLiter">--</span><span class="unit"> L</span>
+          <span id="volumeLiter">--</span><span class="unit">L</span>
         </div>
       </div>
 
       <div class="card">
         <div class="label">TDS</div>
         <div class="value tds">
-          <span id="tdsPpm">--</span><span class="unit"> ppm</span>
+          <span id="tdsPpm">--</span><span class="unit">ppm</span>
         </div>
       </div>
 
       <div class="card">
         <div class="label">TEMPERATURE</div>
         <div class="value temp">
-          <span id="temperatureC">--</span><span class="unit"> °C</span>
+          <span id="temperatureC">--</span><span class="unit">°C</span>
         </div>
       </div>
 
       <div class="card">
         <div class="label">EC</div>
         <div class="value ec">
-          <span id="ecMs">--</span><span class="unit"> mS</span>
+          <span id="ecMs">--</span><span class="unit">mS</span>
         </div>
       </div>
 
       <div class="card">
         <div class="label">DEVICE</div>
-        <div class="value" style="font-size:22px;">
+        <div class="value device">
           <span id="deviceName">--</span>
         </div>
       </div>
+    </div>
 
+    <div class="charts">
+      <div class="chart-card">
+        <div class="chart-title">Water Level - 24 Jam</div>
+        <canvas id="levelChart"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Temperature - 24 Jam</div>
+        <canvas id="tempChart"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">TDS - 24 Jam</div>
+        <canvas id="tdsChart"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">EC - 24 Jam</div>
+        <canvas id="ecChart"></canvas>
+      </div>
     </div>
 
     <div class="footer">
-      Last update: <span id="lastUpdate">--</span><br />
-      Auto refresh every 5 seconds
+      AIS Crystal Indonesia · ESP32 Water Monitoring<br />
+      Auto refresh every 60 seconds
     </div>
 
   </div>
@@ -187,68 +325,208 @@
     const SUPABASE_URL = "https://lzfcwphsqyoujzjhvhlr.supabase.co";
     const SUPABASE_KEY = "sb_publishable_8DMey9ovY5b2L8GXlZkFvA_b5NaD9RW";
 
-    const API_URL =
+    const REFRESH_INTERVAL_MS = 60000;
+
+    const LATEST_API =
       `${SUPABASE_URL}/rest/v1/water_monitoring?select=*&order=created_at.desc&limit=1`;
 
-    async function loadData() {
+    const HISTORY_API =
+      `${SUPABASE_URL}/rest/v1/water_monitoring?select=*&order=created_at.asc&limit=500`;
+
+    let levelChart = null;
+    let tempChart = null;
+    let tdsChart = null;
+    let ecChart = null;
+
+    function levelColor(level) {
+      if (level < 25) return "#dc2626";
+      if (level < 50) return "#facc15";
+      if (level < 75) return "#0ea5e9";
+      return "#16a34a";
+    }
+
+    function formatAge(date) {
+      const now = new Date();
+      const diffSec = Math.floor((now - date) / 1000);
+
+      if (diffSec < 60) return `${diffSec} detik lalu`;
+      if (diffSec < 3600) return `${Math.floor(diffSec / 60)} menit lalu`;
+      return `${Math.floor(diffSec / 3600)} jam lalu`;
+    }
+
+    function updateStatusByAge(date) {
       const status = document.getElementById("status");
+      const diffSec = Math.floor((new Date() - date) / 1000);
 
-      try {
-        const response = await fetch(API_URL, {
-          method: "GET",
-          headers: {
-            "apikey": SUPABASE_KEY,
-            "Authorization": `Bearer ${SUPABASE_KEY}`,
-            "Content-Type": "application/json"
-          }
-        });
+      status.className = "status-value";
 
-        if (!response.ok) {
-          throw new Error("Supabase response error: " + response.status);
-        }
-
-        const data = await response.json();
-
-        if (!data || data.length === 0) {
-          status.textContent = "No data found";
-          status.style.color = "#facc15";
-          return;
-        }
-
-        const latest = data[0];
-
-        const waterLevel = Number(latest.water_level || 0);
-        const volumeLiter = Number(latest.volume_liter || 0);
-        const tdsPpm = Number(latest.tds_ppm || 0);
-        const temperatureC = Number(latest.temperature_c || 0);
-        const ecMs = Number(latest.ec_ms || 0);
-
-        document.getElementById("waterLevel").textContent = waterLevel.toFixed(1);
-        document.getElementById("volumeLiter").textContent = volumeLiter.toFixed(0);
-        document.getElementById("tdsPpm").textContent = tdsPpm.toFixed(0);
-        document.getElementById("temperatureC").textContent = temperatureC.toFixed(1);
-        document.getElementById("ecMs").textContent = ecMs.toFixed(2);
-        document.getElementById("deviceName").textContent = latest.device_name || "-";
-
-        document.getElementById("levelBar").style.width =
-          Math.max(0, Math.min(100, waterLevel)) + "%";
-
-        const date = new Date(latest.created_at);
-        document.getElementById("lastUpdate").textContent =
-          date.toLocaleString("id-ID");
-
+      if (diffSec <= 180) {
         status.textContent = "ONLINE";
-        status.style.color = "#22c55e";
-
-      } catch (error) {
-        console.error(error);
-        status.textContent = "CONNECTION ERROR";
-        status.style.color = "#ef4444";
+        status.classList.add("online");
+      } else if (diffSec <= 900) {
+        status.textContent = "STALE DATA";
+        status.classList.add("stale");
+      } else {
+        status.textContent = "OFFLINE";
+        status.classList.add("offline");
       }
     }
 
-    loadData();
-    setInterval(loadData, 5000);
+    async function supabaseFetch(url) {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Supabase error: " + response.status);
+      }
+
+      return await response.json();
+    }
+
+    async function loadLatest() {
+      const data = await supabaseFetch(LATEST_API);
+
+      if (!data || data.length === 0) {
+        const status = document.getElementById("status");
+        status.textContent = "NO DATA";
+        status.className = "status-value stale";
+        return;
+      }
+
+      const latest = data[0];
+
+      const waterLevel = Number(latest.water_level || 0);
+      const volumeLiter = Number(latest.volume_liter || 0);
+      const tdsPpm = Number(latest.tds_ppm || 0);
+      const temperatureC = Number(latest.temperature_c || 0);
+      const ecMs = Number(latest.ec_ms || 0);
+
+      document.getElementById("waterLevel").textContent = waterLevel.toFixed(1);
+      document.getElementById("volumeLiter").textContent = volumeLiter.toFixed(0);
+      document.getElementById("tdsPpm").textContent = tdsPpm.toFixed(0);
+      document.getElementById("temperatureC").textContent = temperatureC.toFixed(1);
+      document.getElementById("ecMs").textContent = ecMs.toFixed(2);
+      document.getElementById("deviceName").textContent = latest.device_name || "-";
+
+      const bar = document.getElementById("levelBar");
+      bar.style.width = Math.max(0, Math.min(100, waterLevel)) + "%";
+      bar.style.background = levelColor(waterLevel);
+
+      const date = new Date(latest.created_at);
+
+      document.getElementById("lastUpdate").textContent =
+        date.toLocaleString("id-ID");
+
+      document.getElementById("dataAge").textContent = formatAge(date);
+
+      updateStatusByAge(date);
+    }
+
+    function createChart(canvasId, label, labels, values, color) {
+      const ctx = document.getElementById(canvasId).getContext("2d");
+
+      return new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: label,
+            data: values,
+            borderColor: color,
+            backgroundColor: color + "26",
+            borderWidth: 2,
+            fill: true,
+            tension: 0.35,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: "#334155"
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: "#64748b",
+                maxTicksLimit: 6
+              },
+              grid: {
+                color: "#e2e8f0"
+              }
+            },
+            y: {
+              ticks: {
+                color: "#64748b"
+              },
+              grid: {
+                color: "#e2e8f0"
+              }
+            }
+          }
+        }
+      });
+    }
+
+    async function loadHistory() {
+      const data = await supabaseFetch(HISTORY_API);
+      const now = new Date();
+
+      const last24h = data.filter(row => {
+        const date = new Date(row.created_at);
+        return now - date <= 24 * 60 * 60 * 1000;
+      });
+
+      const labels = last24h.map(row => {
+        const date = new Date(row.created_at);
+        return date.toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      });
+
+      const levelData = last24h.map(row => Number(row.water_level || 0));
+      const tempData = last24h.map(row => Number(row.temperature_c || 0));
+      const tdsData = last24h.map(row => Number(row.tds_ppm || 0));
+      const ecData = last24h.map(row => Number(row.ec_ms || 0));
+
+      if (levelChart) levelChart.destroy();
+      if (tempChart) tempChart.destroy();
+      if (tdsChart) tdsChart.destroy();
+      if (ecChart) ecChart.destroy();
+
+      levelChart = createChart("levelChart", "Water Level (%)", labels, levelData, "#0ea5e9");
+      tempChart = createChart("tempChart", "Temperature (°C)", labels, tempData, "#e11d48");
+      tdsChart = createChart("tdsChart", "TDS (ppm)", labels, tdsData, "#ca8a04");
+      ecChart = createChart("ecChart", "EC (mS)", labels, ecData, "#16a34a");
+    }
+
+    async function refreshDashboard() {
+      try {
+        await loadLatest();
+        await loadHistory();
+      } catch (error) {
+        console.error(error);
+        const status = document.getElementById("status");
+        status.textContent = "CONNECTION ERROR";
+        status.className = "status-value offline";
+      }
+    }
+
+    refreshDashboard();
+    setInterval(refreshDashboard, REFRESH_INTERVAL_MS);
   </script>
 </body>
 </html>
