@@ -1,1 +1,254 @@
-main
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIS Water Monitor</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #07111f;
+      color: white;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      margin: 0;
+      color: #38bdf8;
+    }
+
+    .header p {
+      margin: 6px 0 0;
+      color: #94a3b8;
+    }
+
+    .status {
+      text-align: center;
+      margin-bottom: 16px;
+      color: #22c55e;
+      font-weight: bold;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    }
+
+    .label {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+
+    .value {
+      font-size: 34px;
+      font-weight: bold;
+    }
+
+    .unit {
+      font-size: 16px;
+      color: #cbd5e1;
+    }
+
+    .level {
+      color: #38bdf8;
+    }
+
+    .tds {
+      color: #facc15;
+    }
+
+    .temp {
+      color: #fb7185;
+    }
+
+    .ec {
+      color: #4ade80;
+    }
+
+    .footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .bar {
+      width: 100%;
+      height: 14px;
+      background: #1e293b;
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #22d3ee, #38bdf8);
+      border-radius: 99px;
+      transition: width 0.5s ease;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <div class="header">
+      <h1>AIS WATER MONITOR</h1>
+      <p>ESP32 Tandon Monitoring Dashboard</p>
+    </div>
+
+    <div class="status" id="status">Connecting to Supabase...</div>
+
+    <div class="grid">
+
+      <div class="card">
+        <div class="label">WATER LEVEL</div>
+        <div class="value level">
+          <span id="waterLevel">--</span><span class="unit"> %</span>
+        </div>
+        <div class="bar">
+          <div class="bar-fill" id="levelBar"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label">VOLUME</div>
+        <div class="value">
+          <span id="volumeLiter">--</span><span class="unit"> L</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label">TDS</div>
+        <div class="value tds">
+          <span id="tdsPpm">--</span><span class="unit"> ppm</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label">TEMPERATURE</div>
+        <div class="value temp">
+          <span id="temperatureC">--</span><span class="unit"> °C</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label">EC</div>
+        <div class="value ec">
+          <span id="ecMs">--</span><span class="unit"> mS</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label">DEVICE</div>
+        <div class="value" style="font-size:22px;">
+          <span id="deviceName">--</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      Last update: <span id="lastUpdate">--</span><br />
+      Auto refresh every 5 seconds
+    </div>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://lzfcwphsqyoujzjhvhlr.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_8DMey9ovY5b2L8GXlZkFvA_b5NaD9RW";
+
+    const API_URL =
+      `${SUPABASE_URL}/rest/v1/water_monitoring?select=*&order=created_at.desc&limit=1`;
+
+    async function loadData() {
+      const status = document.getElementById("status");
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "GET",
+          headers: {
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error("Supabase response error: " + response.status);
+        }
+
+        const data = await response.json();
+
+        if (!data || data.length === 0) {
+          status.textContent = "No data found";
+          status.style.color = "#facc15";
+          return;
+        }
+
+        const latest = data[0];
+
+        const waterLevel = Number(latest.water_level || 0);
+        const volumeLiter = Number(latest.volume_liter || 0);
+        const tdsPpm = Number(latest.tds_ppm || 0);
+        const temperatureC = Number(latest.temperature_c || 0);
+        const ecMs = Number(latest.ec_ms || 0);
+
+        document.getElementById("waterLevel").textContent = waterLevel.toFixed(1);
+        document.getElementById("volumeLiter").textContent = volumeLiter.toFixed(0);
+        document.getElementById("tdsPpm").textContent = tdsPpm.toFixed(0);
+        document.getElementById("temperatureC").textContent = temperatureC.toFixed(1);
+        document.getElementById("ecMs").textContent = ecMs.toFixed(2);
+        document.getElementById("deviceName").textContent = latest.device_name || "-";
+
+        document.getElementById("levelBar").style.width =
+          Math.max(0, Math.min(100, waterLevel)) + "%";
+
+        const date = new Date(latest.created_at);
+        document.getElementById("lastUpdate").textContent =
+          date.toLocaleString("id-ID");
+
+        status.textContent = "ONLINE";
+        status.style.color = "#22c55e";
+
+      } catch (error) {
+        console.error(error);
+        status.textContent = "CONNECTION ERROR";
+        status.style.color = "#ef4444";
+      }
+    }
+
+    loadData();
+    setInterval(loadData, 5000);
+  </script>
+</body>
+</html>
