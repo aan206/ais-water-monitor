@@ -331,7 +331,7 @@
       `${SUPABASE_URL}/rest/v1/water_monitoring?select=*&order=created_at.desc&limit=1`;
 
     const HISTORY_API =
-      `${SUPABASE_URL}/rest/v1/water_monitoring?select=*&order=created_at.asc&limit=500`;
+      `${SUPABASE_URL}/rest/v1/water_monitoring?select=*&order=created_at.desc&limit=500`;
 
     let levelChart = null;
     let tempChart = null;
@@ -483,11 +483,13 @@
     async function loadHistory() {
       const data = await supabaseFetch(HISTORY_API);
       const now = new Date();
-
-      const last24h = data.filter(row => {
+      
+      let last24h = data.filter(row => {
         const date = new Date(row.created_at);
         return now - date <= 24 * 60 * 60 * 1000;
       });
+
+      last24h.reverse();
 
       const labels = last24h.map(row => {
         const date = new Date(row.created_at);
